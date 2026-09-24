@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Make a Payment</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="page">
+
+        <section class="hero">
+
+            <h1>Make a Payment</h1>
+
+            <p>
+                Select the amount you would like to pay.
+            </p>
+
+        </section>
+
+
+        <section class="amount-section">
+
+            <button
+                class="amount-button"
+                onclick="openPayment(50)"
+            >
+                Pay K50
+            </button>
+
+
+            <button
+                class="amount-button"
+                onclick="openPayment(100)"
+            >
+                Pay K100
+            </button>
+
+
+            <button
+                class="amount-button"
+                onclick="openPayment(200)"
+            >
+                Pay K200
+            </button>
+
+        </section>
+
+    </main>
+
+
+    <!-- PAYMENT CARD -->
+
+    <div
+        id="paymentModal"
+        class="modal"
+    >
+
+        <div class="payment-card">
+
+            <button
+                class="close-button"
+                onclick="closePayment()"
+            >
+                ×
+            </button>
+
+
+            <div class="payment-header">
+
+                <h2>Payment Details</h2>
+
+                <p id="selectedAmount">
+                    Amount: K0
+                </p>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="name">
+                    Full Name
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    placeholder="Enter your full name"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="Enter your email"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="phone">
+                    Phone Number
+                </label>
+
+                <input
+                    type="tel"
+                    id="phone"
+                    placeholder="097XXXXXXX"
+                >
+
+            </div>
+
+
+            <button
+                id="payButton"
+                class="pay-button"
+                onclick="payWithLenco()"
+            >
+                Pay Now
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- Lenco payment widget -->
+
+    <script src="https://pay.lenco.co/js/v1/inline.js"></script>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
