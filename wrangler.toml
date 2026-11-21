@@ -1,5 +1,12 @@
+
 name = "lenco-payment-website"
-
 main = "worker.js"
+compatibility_date = "2026-10-12"
 
-compatibility_date = "2026-09-24"
+[[kv_namespaces]]
+binding = "PAYMENTS"
+id = "bfc361780b384820b129d6a64612c422"
+
+[assets]
+directory = "."
+binding = "ASSETS"

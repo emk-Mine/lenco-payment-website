@@ -1,301 +1,428 @@
-let selectedAmount = 0;
 
+/* =========================
+   CONFIGURATION
+========================= */
 
-// Your Cloudflare Worker
 const WORKER_URL =
-    "https://lenco-payment-website.edward-munkanta.workers.dev";
+    'https://lenco-payment-website.edward-munkanta.workers.dev';
 
 
-// Your Lenco public key
-const LENCO_PUBLIC_KEY =
-    "pub-d5661748c0726669cb148577ac3b2d4f6f5c0af3adb9e9f1";
+/* =========================
+   PRODUCTS
+========================= */
+
+const products = {
+
+    product1: {
+        name: 'Product 1',
+        price: 55
+    },
+
+    product2: {
+        name: 'Product 2',
+        price: 150
+    }
+
+};
 
 
-/*
-    Open the payment card
-*/
+/* =========================
+   GLOBAL VARIABLES
+========================= */
 
-function openPayment(amount) {
+let selectedProductId = null;
 
-    selectedAmount = amount;
+let currentReference = null;
 
-    document.getElementById("selectedAmount").textContent =
-        `Amount: K${amount}`;
+let verifying = false;
 
-    document.getElementById("paymentModal").style.display =
-        "flex";
+
+/* =========================
+   ELEMENT SELECTOR
+========================= */
+
+const $ = id => document.getElementById(id);
+
+
+/* =========================
+   SELECT PRODUCT
+========================= */
+
+function selectProduct(id) {
+
+    if (!products[id]) {
+        return;
+    }
+
+    selectedProductId = id;
+
+    $('selectedProductName').textContent =
+        products[id].name;
+
+    $('selectedAmount').textContent =
+        `Amount: K${products[id].price}`;
+
+    $('paymentModal').style.display = 'flex';
+
 }
 
 
-/*
-    Close the payment card
-*/
+/* =========================
+   CLOSE PAYMENT POPUP
+========================= */
 
 function closePayment() {
 
-    document.getElementById("paymentModal").style.display =
-        "none";
+    $('paymentModal').style.display = 'none';
+
 }
 
 
-/*
-    Generate a unique payment reference
-*/
+/* =========================
+   CLOSE STATUS POPUP
+========================= */
 
-function generateReference() {
+function closeStatusPopup() {
 
-    return (
-        "PAY-" +
-        Date.now() +
-        "-" +
-        Math.random()
-            .toString(36)
-            .substring(2, 8)
-            .toUpperCase()
-    );
+    $('statusModal').style.display = 'none';
+
 }
 
 
-/*
-    Start Lenco payment
-*/
+/* =========================
+   SHOW PAYMENT STATUS
+========================= */
 
-function payWithLenco() {
+function showStatus(
+    type,
+    title,
+    message,
+    reference = '',
+    buttonText = 'OK',
+    callback = closeStatusPopup
+) {
+
+    $('statusCard').className =
+        `status-card ${type}`;
+
+    $('statusIcon').textContent =
+        type === 'success'
+            ? '✓'
+            : type === 'error'
+                ? '!'
+                : '…';
+
+    $('statusTitle').textContent = title;
+
+    $('statusMessage').textContent = message;
+
+    $('statusReference').textContent =
+        reference
+            ? `Reference: ${reference}`
+            : '';
+
+    $('statusReference').style.display =
+        reference ? 'block' : 'none';
+
+    $('statusButton').textContent = buttonText;
+
+    $('statusButton').onclick = callback;
+
+    $('statusModal').style.display = 'flex';
+
+}
+
+
+/* =========================
+   START LENCO PAYMENT
+========================= */
+
+async function payWithLenco() {
 
     const name =
-        document.getElementById("name").value.trim();
-
-    const email =
-        document.getElementById("email").value.trim();
+        $('name').value.trim();
 
     const phone =
-        document.getElementById("phone").value.trim();
+        $('phone').value.trim();
+
+    const operator =
+        $('network').value;
 
 
-    // Validate details
+    // Validate payment details
 
-    if (!name) {
+    if (
+        !selectedProductId ||
+        !name ||
+        !operator ||
+        !phone
+    ) {
 
-        alert("Please enter your full name.");
+        showStatus(
+            'error',
+            'Missing details',
+            'Enter your name, network and mobile money number.'
+        );
 
         return;
+
     }
 
 
-    if (!email) {
-
-        alert("Please enter your email address.");
-
-        return;
-    }
-
-
-    if (!phone) {
-
-        alert("Please enter your phone number.");
-
-        return;
-    }
-
-
-    if (!selectedAmount || selectedAmount <= 0) {
-
-        alert("Please select a payment amount.");
-
-        return;
-    }
-
-
-    // Split name
-
-    const nameParts =
-        name.split(/\s+/);
-
-    const firstName =
-        nameParts[0];
-
-    const lastName =
-        nameParts.slice(1).join(" ") || "";
-
-
-    // Create reference
+    // Generate unique payment reference
 
     const reference =
-        generateReference();
+        `PAY-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 
 
-    // Disable button
+    // Disable payment button
 
-    const payButton =
-        document.getElementById("payButton");
+    const button = $('payButton');
 
-    payButton.disabled = true;
+    button.disabled = true;
 
-    payButton.textContent =
-        "Opening payment...";
+    button.textContent = 'Starting payment...';
 
 
-    /*
-        Open Lenco checkout
-    */
+    try {
 
-    LencoPay.getPaid({
+        // Send payment request to Cloudflare Worker
 
-        key: LENCO_PUBLIC_KEY,
+        const response = await fetch(
+            `${WORKER_URL}/collect`,
+            {
+                method: 'POST',
 
-        reference: reference,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
 
-        email: email,
-
-        amount: selectedAmount,
-
-        currency: "ZMW",
-
-        channels: [
-            "card",
-            "mobile-money"
-        ],
-
-        customer: {
-
-            firstName: firstName,
-
-            lastName: lastName,
-
-            phone: phone
-        },
+                body: JSON.stringify({
+                    productId: selectedProductId,
+                    reference,
+                    phone,
+                    operator
+                })
+            }
+        );
 
 
-        onSuccess: async function(response) {
+        // Read Lenco response
 
-            console.log(
-                "Lenco payment response:",
-                response
+        const result = await response.json();
+
+
+        // Check for errors
+
+        if (!response.ok) {
+
+            throw new Error(
+                result.message || 'Payment request failed'
             );
 
-
-            payButton.textContent =
-                "Verifying payment...";
+        }
 
 
-            try {
+        // Save payment reference
 
-                /*
-                    Ask our Cloudflare Worker
-                    to verify the payment.
-                */
-
-                const verification =
-                    await fetch(
-                        `${WORKER_URL}/verify?reference=${encodeURIComponent(reference)}`
-                    );
+        currentReference = reference;
 
 
-                const result =
-                    await verification.json();
+        // Close payment form
+
+        closePayment();
 
 
-                console.log(
-                    "Verification result:",
-                    result
-                );
+        // Show payment request confirmation
+
+        showStatus(
+            'sent',
+            'Payment request sent',
+            'Approve the request on your phone, then check the payment.',
+            reference,
+            'Check payment',
+            () => checkPayment(reference)
+        );
 
 
-                /*
-                    Check the verification result.
+        // Automatically check payment after 5 seconds
 
-                    Lenco returns the payment status
-                    inside the returned data.
-                */
+        setTimeout(() => {
 
-                const status =
-                    result?.data?.status ||
-                    result?.status;
+            if (currentReference === reference) {
 
-
-                if (
-                    verification.ok &&
-                    (
-                        status === "successful" ||
-                        status === "success"
-                    )
-                ) {
-
-                    alert(
-                        "Payment successful!\n\n" +
-                        "Reference: " +
-                        reference
-                    );
-
-                    closePayment();
-
-                } else {
-
-                    alert(
-                        "Payment was received but is still being confirmed.\n\n" +
-                        "Reference: " +
-                        reference
-                    );
-                }
-
-
-            } catch (error) {
-
-                console.error(
-                    "Verification error:",
-                    error
-                );
-
-
-                alert(
-                    "Payment was submitted, but we could not confirm it yet.\n\n" +
-                    "Reference: " +
-                    reference
-                );
+                checkPayment(reference);
 
             }
 
-
-            payButton.disabled = false;
-
-            payButton.textContent =
-                "Pay Now";
-        },
+        }, 5000);
 
 
-        onClose: function() {
+    } catch (e) {
 
-            console.log(
-                "Lenco payment window closed."
+        showStatus(
+            'error',
+            'Payment could not start',
+            e.message
+        );
+
+    } finally {
+
+        button.disabled = false;
+
+        button.textContent = 'Pay Now';
+
+    }
+
+}
+
+
+/* =========================
+   VERIFY LENCO PAYMENT
+========================= */
+
+async function checkPayment(reference) {
+
+    // Prevent duplicate verification requests
+
+    if (
+        verifying ||
+        currentReference !== reference
+    ) {
+
+        return;
+
+    }
+
+    verifying = true;
+
+
+    try {
+
+        // Request payment verification
+
+        const response = await fetch(
+            `${WORKER_URL}/verify?reference=${encodeURIComponent(reference)}`,
+            {
+                cache: 'no-store'
+            }
+        );
+
+
+        // Read verification result
+
+        const result = await response.json();
+
+
+        // Handle verification errors
+
+        if (!response.ok) {
+
+            throw new Error(
+                result.message || 'Verification failed'
             );
 
-
-            payButton.disabled = false;
-
-            payButton.textContent =
-                "Pay Now";
-        },
-
-
-        onConfirmationPending: function() {
-
-            console.log(
-                "Payment confirmation pending."
-            );
-
-
-            payButton.disabled = false;
-
-            payButton.textContent =
-                "Pay Now";
-
-
-            alert(
-                "Your payment is being confirmed. " +
-                "Please wait for confirmation."
-            );
         }
 
-    });
+
+        /* =========================
+           PAYMENT SUCCESSFUL
+        ========================= */
+
+        if (
+            result.status === 'successful' &&
+            result.redirectUrl &&
+            result.product
+        ) {
+
+            currentReference = null;
+
+            closeStatusPopup();
+
+
+            // Display purchased product
+
+            $('summaryProduct').textContent =
+                result.product.name;
+
+
+            // Display amount paid
+
+            $('summaryAmount').textContent =
+                `K${result.product.amount}`;
+
+
+            // Display transaction reference
+
+            $('summaryReference').textContent =
+                result.reference;
+
+
+            // Set purchased product redirect link
+
+            $('accessButton').href =
+                result.redirectUrl;
+
+
+            // Show purchase summary
+
+            $('summaryModal').style.display =
+                'flex';
+
+        }
+
+
+        /* =========================
+           PAYMENT PENDING
+        ========================= */
+
+        else if (result.status === 'pending') {
+
+            showStatus(
+                'pending',
+                'Payment still being confirmed',
+                'Approve the payment on your phone, then check again.',
+                reference,
+                'Check again',
+                () => checkPayment(reference)
+            );
+
+        }
+
+
+        /* =========================
+           PAYMENT FAILED
+        ========================= */
+
+        else {
+
+            currentReference = null;
+
+            showStatus(
+                'error',
+                'Payment not completed',
+                'The payment was not confirmed. Please try again.',
+                reference
+            );
+
+        }
+
+
+    } catch (e) {
+
+        showStatus(
+            'pending',
+            'Unable to confirm yet',
+            'Please try checking again shortly.',
+            reference,
+            'Check again',
+            () => checkPayment(reference)
+        );
+
+    } finally {
+
+        verifying = false;
+
+    }
 
 }

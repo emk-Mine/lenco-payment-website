@@ -1,92 +1,141 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Make a Payment</title>
+    <title>Donations</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+    <!-- MAIN PAGE -->
     <main class="page">
 
+        <!-- HEADER -->
         <section class="hero">
-
-            <h1>Make a Payment</h1>
-
-            <p>
-                Select the amount you would like to pay.
-            </p>
-
+            <h1>Children First Foundation</h1>
+            <p>Donate to help struggling families give their children a better future.</p>
         </section>
 
+        <!-- PRODUCTS -->
+        <section class="products-section">
 
-        <section class="amount-section">
+            <!-- PRODUCT 1 -->
+            <article class="product-card">
 
-            <button
-                class="amount-button"
-                onclick="openPayment(50)"
-            >
-                Pay K50
-            </button>
+                <img
+                    src="images/Product1.jpg"
+                    alt="Product 1"
+                    class="product-image"
+                >
 
+                <div class="product-details">
 
-            <button
-                class="amount-button"
-                onclick="openPayment(100)"
-            >
-                Pay K100
-            </button>
+                    <h2>Food for children</h2>
 
+                    <p class="product-price">K55</p>
 
-            <button
-                class="amount-button"
-                onclick="openPayment(200)"
-            >
-                Pay K200
-            </button>
+                    <button
+                        class="buy-button"
+                        onclick="selectProduct('product1')"
+                    >
+                        Donate
+                    </button>
+
+                </div>
+
+            </article>
+
+            <!-- PRODUCT 2 -->
+            <article class="product-card">
+
+                <img
+                    src="images/Product2.jpg"
+                    alt="Product 2"
+                    class="product-image"
+                >
+
+                <div class="product-details">
+
+                    <h2>Education for children</h2>
+
+                    <p class="product-price">K150</p>
+
+                    <button
+                        class="buy-button"
+                        onclick="selectProduct('product2')"
+                    >
+                        Donate
+                    </button>
+
+                </div>
+
+            </article>
+
+        
+        </section>
+
+        <!-- VIDEO SECTION -->
+        <section class="video-section">
+
+            <h2>Watch Video</h2>
+
+            <div class="video-container">
+
+                <video
+                    controls
+                    playsinline
+                    preload="metadata"
+                >
+                    <source
+                        src="videos/video1.mp4"
+                        type="video/mp4"
+                    >
+
+                    Your browser does not support video playback.
+
+                </video>
+
+            </div>
 
         </section>
 
     </main>
 
 
-    <!-- PAYMENT CARD -->
 
-    <div
-        id="paymentModal"
-        class="modal"
-    >
+    <!-- PAYMENT MODAL -->
+    <div id="paymentModal" class="modal">
 
         <div class="payment-card">
 
             <button
                 class="close-button"
                 onclick="closePayment()"
+                aria-label="Close"
             >
                 ×
             </button>
 
-
+            <!-- PAYMENT HEADER -->
             <div class="payment-header">
 
                 <h2>Payment Details</h2>
 
-                <p id="selectedAmount">
-                    Amount: K0
-                </p>
+                <p id="selectedProductName"></p>
+
+                <p id="selectedAmount"></p>
 
             </div>
 
-
+            <!-- FULL NAME -->
             <div class="form-group">
 
                 <label for="name">
@@ -94,44 +143,59 @@
                 </label>
 
                 <input
-                    type="text"
                     id="name"
+                    autocomplete="name"
                     placeholder="Enter your full name"
                 >
 
             </div>
 
-
+            <!-- MOBILE NETWORK -->
             <div class="form-group">
 
-                <label for="email">
-                    Email Address
+                <label for="network">
+                    Mobile Network
                 </label>
 
-                <input
-                    type="email"
-                    id="email"
-                    placeholder="Enter your email"
-                >
+                <select id="network">
+
+                    <option value="">
+                        Select network
+                    </option>
+
+                    <option value="airtel">
+                        Airtel
+                    </option>
+
+                    <option value="mtn">
+                        MTN
+                    </option>
+
+                    <option value="zamtel">
+                        Zamtel
+                    </option>
+
+                </select>
 
             </div>
 
-
+            <!-- PHONE NUMBER -->
             <div class="form-group">
 
                 <label for="phone">
-                    Phone Number
+                    Mobile Money Number
                 </label>
 
                 <input
-                    type="tel"
                     id="phone"
+                    type="tel"
+                    autocomplete="tel"
                     placeholder="097XXXXXXX"
                 >
 
             </div>
 
-
+            <!-- PAY BUTTON -->
             <button
                 id="payButton"
                 class="pay-button"
@@ -145,10 +209,115 @@
     </div>
 
 
-    <!-- Lenco payment widget -->
+    <!-- PAYMENT STATUS MODAL -->
+    <div id="statusModal" class="status-modal">
 
-    <script src="https://pay.lenco.co/js/v1/inline.js"></script>
+        <div id="statusCard" class="status-card">
 
+            <button
+                class="status-close"
+                onclick="closeStatusPopup()"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+            <div
+                id="statusIcon"
+                class="status-icon"
+            >
+                …
+            </div>
+
+            <h2 id="statusTitle">
+                Payment
+            </h2>
+
+            <p
+                id="statusMessage"
+                class="status-message"
+            ></p>
+
+            <div
+                id="statusReference"
+                class="status-reference"
+            ></div>
+
+            <button
+                id="statusButton"
+                class="status-button"
+                onclick="closeStatusPopup()"
+            >
+                OK
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- PURCHASE SUMMARY MODAL -->
+    <div id="summaryModal" class="status-modal">
+
+        <div class="status-card">
+
+            <!-- SUCCESS ICON -->
+            <div
+                class="status-icon"
+                style="background:#ecfdf5;color:#16a34a"
+            >
+                ✓
+            </div>
+
+            <h2>
+                Purchase Successful!
+            </h2>
+
+            <p>
+                Thank you for your purchase.
+            </p>
+
+            <!-- PURCHASE DETAILS -->
+            <div class="purchase-summary">
+
+                <p>
+                    Product:
+                    <strong id="summaryProduct"></strong>
+                </p>
+
+                <p>
+                    Amount:
+                    <strong id="summaryAmount"></strong>
+                </p>
+
+                <p>
+                    Status:
+                    <strong>Paid</strong>
+                </p>
+
+                <p>
+                    Reference:
+                    <strong id="summaryReference"></strong>
+                </p>
+
+            </div>
+
+            <!-- ACCESS PURCHASE -->
+            <a
+                id="accessButton"
+                class="status-button"
+                href="#"
+                rel="noopener noreferrer"
+            >
+                Access Purchase →
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- JAVASCRIPT -->
     <script src="script.js"></script>
 
 </body>
